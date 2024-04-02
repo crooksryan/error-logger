@@ -23,7 +23,7 @@ fn main() -> std::io::Result<()> {
     simple_logger::init().unwrap();
     set_max_level(LevelFilter::Info);
 
-    info!("Start Up");
+    info!("Start Up on port 8000");
 
     let socket = UdpSocket::bind("127.0.0.1:8000")?;
     socket.set_read_timeout(Some(Duration::from_millis(15))).unwrap();
