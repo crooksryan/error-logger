@@ -7,16 +7,37 @@ use std::{time::Duration, net::{UdpSocket,SocketAddr}};
 fn handle_message(buf: Vec<u8>, amt: usize, src: SocketAddr, socket: UdpSocket) -> std::io::Result<()> {
     let decode = String::from_utf8(buf[..amt].to_vec()).unwrap();
 
-    let deserialized: Message = serde_json::from_str(&decode).unwrap();
-    info!("recieved {}: {} [{}]", src, deserialized.message, deserialized.code);
+    let deserialized: Result<Message, serde_json::Error> = serde_json::from_str(&decode);
+
+    if let Ok(deserialized) = deserialized {
+        info!("recieved from {}: {} [{}]", src, deserialized.message, deserialized.code);
+
+        let response = Response { code: 200 };
+        let response = serde_json::to_string(&response).unwrap();
+        let response = response.as_bytes();
+
+        let _bytes = socket.send_to(response, src)?;
+
+        Ok(())
+    } else {
+        Err(std::io::Error::new(std::io::ErrorKind::Other, "broke"))
+    }
+}
+
+fn simple_handle(buf: Vec<u8>, amt: usize, src: SocketAddr, socket: UdpSocket) {
+    let decode = String::from_utf8(buf[..amt].to_vec()).unwrap();
+
+    info!("recieved simple from {}: {}", src, decode);
 
     let response = Response { code: 200 };
-    let response = serde_json::to_string(&response).unwrap();
-    let response = response.as_bytes();
+    let response = serde_json::to_string(&response);
 
-    let _bytes = socket.send_to(response, src)?;
-
-    Ok(())
+    if let Ok(response) = response {
+        let response = response.as_bytes();
+        let _result_bytes = socket.send_to(response, src);
+    } else {
+        info!("couldn't encode res")
+    }
 }
 
 fn main() -> std::io::Result<()> {
@@ -43,6 +64,12 @@ fn main() -> std::io::Result<()> {
         
         let sock2 = socket.try_clone()?;
 
-        handle_message(buf, amt, src, sock2)?;
+        match handle_message(buf.clone(), amt, src, sock2) {
+            Ok(_) => {},
+            Err(_) => {
+                info!("connection required simple handle");
+                simple_handle(buf.clone(), amt, src, socket.try_clone()?);
+            }
+        }
     }
 }
