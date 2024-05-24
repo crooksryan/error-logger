@@ -64,15 +64,26 @@ func simple_handle(listener <-chan simple_pack) {
         log.Printf("Simple Rec from %s: %s\n", pack.conn.RemoteAddr(), string(pack.buf[:pack.amt]))
         res := []byte("mes rec")
         pack.conn.Write(res)
+
+        go keep_listening(pack.conn)
+    }
+}
+
+func keep_listening(conn net.Conn){
+    for {
+        buf := make([]byte, 1024)
+        n, err := conn.Read(buf)
+
+        if err != nil {
+            log.Printf("Connection with %s ended\n\n", conn.RemoteAddr())
+            return
+        }
+
+        log.Printf("Read from %s: %s\n", conn.RemoteAddr(), string(buf[:n]))
     }
 }
 
 func main() {
-    /*
-    udpAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:8000")
-    server, err := net.ListenUDP("udp", udpAddr)
-    */
-
     server, err := net.Listen("tcp", "127.0.0.1:8000")
 
     c := make(chan simple_pack)
