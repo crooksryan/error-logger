@@ -1,9 +1,22 @@
 mod structs;
 use crate::structs::*;
 use simple_logger;
-use log::{set_max_level, info, LevelFilter};
 use std::net::SocketAddr;
-use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::{TcpListener, TcpStream}};
+use log::{
+    set_max_level,
+    info,
+    LevelFilter
+};
+use tokio::{
+    io::{
+        AsyncReadExt,
+        AsyncWriteExt
+    }, 
+    net::{
+        TcpListener,
+        TcpStream
+    }
+};
 
 async fn handle_message(stream: &mut TcpStream, src: &SocketAddr) -> std::io::Result<()> {
     let mut buf = String::new();
