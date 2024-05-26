@@ -1,10 +1,20 @@
 package main
 
 import (
-    "log"
-    "net"
-    "encoding/json"
+	"encoding/json"
+	"net"
+	"os"
+	"time"
+
+	"github.com/charmbracelet/log"
 )
+
+var logger = log.NewWithOptions(os.Stdout, log.Options{
+    ReportCaller: false,
+    ReportTimestamp: true,
+    TimeFormat: time.Kitchen,
+    Prefix: "🔥",
+});
 
 type simple_pack struct {
     buf  []byte
@@ -26,15 +36,15 @@ func handle_message(conn net.Conn, c chan <- simple_pack) {
     n, err := conn.Read(buf)
     
     if err != nil {
-        log.Fatalf("Connection %s failed to read\n", conn.RemoteAddr())
+        logger.Fatalf("Connection %s failed to read\n", conn.RemoteAddr())
     }
 
     var message Message
     err = json.Unmarshal(buf[:n], &message)
 
     if err != nil {
-        log.Printf("Connection %s failed to convert\n", conn.RemoteAddr())
-        log.Printf("Sending %s to simple", conn.RemoteAddr())
+        logger.Printf("Connection %s failed to convert\n", conn.RemoteAddr())
+        logger.Printf("Sending %s to simple", conn.RemoteAddr())
 
         packet := simple_pack{
             buf: buf,
@@ -46,22 +56,22 @@ func handle_message(conn net.Conn, c chan <- simple_pack) {
         return
     }
 
-    log.Printf("Recieved from %s: %s [%d]\n", conn.RemoteAddr(), message.Message, message.Code)
+    logger.Printf("Recieved from %s: %s [%d]\n", conn.RemoteAddr(), message.Message, message.Code)
 
     // send response
     response := Response{Code: 200}
     res, err := json.Marshal(response)
-    log.Printf("Sending to %s\n", conn.RemoteAddr())
+    logger.Printf("Sending to %s\n", conn.RemoteAddr())
     conn.Write(res)
 }
 
 func simple_handle(listener <-chan simple_pack) {
-    log.Println("Simple thread running")
+    logger.Info("Simple thread running")
 
     for {
         pack := <- listener
 
-        log.Printf("Simple Rec from %s: %s\n", pack.conn.RemoteAddr(), string(pack.buf[:pack.amt]))
+        logger.Infof("Simple Rec from %s: %s\n", pack.conn.RemoteAddr(), string(pack.buf[:pack.amt]))
         res := []byte("mes rec")
         pack.conn.Write(res)
 
@@ -75,11 +85,11 @@ func keep_listening(conn net.Conn){
         n, err := conn.Read(buf)
 
         if err != nil {
-            log.Printf("Connection with %s ended\n\n", conn.RemoteAddr())
+            logger.Warnf("Connection with %s ended\n\n", conn.RemoteAddr())
             return
         }
 
-        log.Printf("Read from %s: %s\n", conn.RemoteAddr(), string(buf[:n]))
+        logger.Infof("Read from %s: %s\n", conn.RemoteAddr(), string(buf[:n]))
     }
 }
 
@@ -89,18 +99,19 @@ func main() {
     c := make(chan simple_pack)
 
     if err != nil {
-        log.Println("Couldn't listen on port")
+        logger.Error("Couldn't listen on port")
         return
     }
 
     go simple_handle(c)
 
-    log.Printf("Listening on %s\n", server.Addr())
+    logger.Infof("Listening on %s\n", server.Addr())
+
     for {
         conn, err := server.Accept()
 
         if err != nil {
-            log.Println("bad connection")
+            logger.Warn("bad connection")
             continue
         }
 
