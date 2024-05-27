@@ -36,14 +36,14 @@ func handle_message(conn net.Conn, c chan <- simple_pack) {
     n, err := conn.Read(buf)
     
     if err != nil {
-        logger.Fatalf("Connection %s failed to read\n", conn.RemoteAddr())
+        logger.Fatalf("Connection %s failed to read", conn.RemoteAddr())
     }
 
     var message Message
     err = json.Unmarshal(buf[:n], &message)
 
     if err != nil {
-        logger.Printf("Connection %s failed to convert\n", conn.RemoteAddr())
+        logger.Printf("Connection %s failed to convert", conn.RemoteAddr())
         logger.Printf("Sending %s to simple", conn.RemoteAddr())
 
         packet := simple_pack{
@@ -56,12 +56,12 @@ func handle_message(conn net.Conn, c chan <- simple_pack) {
         return
     }
 
-    logger.Printf("Recieved from %s: %s [%d]\n", conn.RemoteAddr(), message.Message, message.Code)
+    logger.Printf("Recieved from %s: %s [%d]", conn.RemoteAddr(), message.Message, message.Code)
 
     // send response
     response := Response{Code: 200}
     res, err := json.Marshal(response)
-    logger.Printf("Sending to %s\n", conn.RemoteAddr())
+    logger.Printf("Sending to %s", conn.RemoteAddr())
     conn.Write(res)
 }
 
@@ -71,7 +71,7 @@ func simple_handle(listener <-chan simple_pack) {
     for {
         pack := <- listener
 
-        logger.Infof("Simple Rec from %s: %s\n", pack.conn.RemoteAddr(), string(pack.buf[:pack.amt]))
+        logger.Infof("Simple Rec from %s: %s", pack.conn.RemoteAddr(), string(pack.buf[:pack.amt]))
         res := []byte("mes rec")
         pack.conn.Write(res)
 
@@ -85,11 +85,11 @@ func keep_listening(conn net.Conn){
         n, err := conn.Read(buf)
 
         if err != nil {
-            logger.Warnf("Connection with %s ended\n\n", conn.RemoteAddr())
+            logger.Warnf("Connection with %s ended\n", conn.RemoteAddr())
             return
         }
 
-        logger.Infof("Read from %s: %s\n", conn.RemoteAddr(), string(buf[:n]))
+        logger.Infof("Read from %s: %s", conn.RemoteAddr(), string(buf[:n]))
     }
 }
 
@@ -105,7 +105,7 @@ func main() {
 
     go simple_handle(c)
 
-    logger.Infof("Listening on %s\n", server.Addr())
+    logger.Infof("Listening on %s", server.Addr())
 
     for {
         conn, err := server.Accept()
