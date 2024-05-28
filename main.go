@@ -13,7 +13,7 @@ var logger = log.NewWithOptions(os.Stdout, log.Options{
     ReportCaller: false,
     ReportTimestamp: true,
     TimeFormat: time.Kitchen,
-    Prefix: "🔥",
+    Prefix: " ",
 });
 
 type simple_pack struct {
